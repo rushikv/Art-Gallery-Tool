@@ -7,8 +7,6 @@ description: Compute Visibility polygon for a vertex
 """
 
 import math as m
-from sympy.solvers import solve
-from sympy import Symbol
 
 def isclose(a, b, rel_tol=1e-04, abs_tol=0.0):
     """
@@ -19,31 +17,9 @@ def isclose(a, b, rel_tol=1e-04, abs_tol=0.0):
     """
     return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
-def findST(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y):
+def Intersection(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y):
     """
-    Find params 'S' & 'T' for 2 line segments
-    :param S1x: x coordinate of segment 1's start point
-    :param S1y: y coordinate of segment 1's start point
-    :param D1x: x coordinate of segment 1's end point
-    :param D1y: y coordinate of segment 1's end point
-    :param S2x: x coordinate of segment 2's start point
-    :param S2y: y coordinate of segment 2's start point
-    :param D2x: x coordinate of segment 2's end point
-    :param D2y: y coordinate of segment 2's end point
-    :return: params S & T
-    """
-    s=Symbol('s')
-    t = Symbol('t')
-    ans=solve([(((1 - s) * S1x) + (s * D1x) - ((1 - t) * S2x) - (t * D2x)), (((1 - s) * S1y) + (s * D1y) - ((1 - t) * S2y) - (t * D2y))])
-    if ans == []:
-        return None, None
-    if len(ans)==1:
-        return None, None
-    return ans[s], ans[t]
-
-def Intersection(seg1x1,seg1y1,seg1x2,seg1y2,seg2x1,seg2y1,seg2x2,seg2y2):
-    """
-    Find intersection point of 2 line segments
+    Find intersection of 2 line segments
     :param S1x: x coordinate of segment 1's start point
     :param S1y: y coordinate of segment 1's start point
     :param D1x: x coordinate of segment 1's end point
@@ -54,13 +30,12 @@ def Intersection(seg1x1,seg1y1,seg1x2,seg1y2,seg2x1,seg2y1,seg2x2,seg2y2):
     :param D2y: y coordinate of segment 2's end point
     :return: Intersection point [x,y]
     """
-    s,t= findST(seg1x1,seg1y1,seg1x2,seg1y2,seg2x1,seg2y1,seg2x2,seg2y2)
-    if s==None and t==None:
+    if ((D1y - S1y) * (S2x - D2x) - (D2y - S2y) * (S1x - D1x)) == 0:
         return [None, None]
-    d = [seg1x2-seg1x1, seg1y2-seg1y1]
-    x = seg1x1+d[0]*s
-    y = seg1y1+d[1]*s
-    return [float(x),float(y)]
+    else:
+        x = ((S2x - D2x) * (((D1y - S1y) * (S1x) + (S1x - D1x) * (S1y))) - (S1x - D1x) * ((D2y - S2y) * (S2x) + (S2x - D2x) * (S2y))) / ((D1y - S1y) * (S2x - D2x) - (D2y - S2y) * (S1x - D1x))
+        y = ((D1y - S1y) * ((D2y - S2y) * (S2x) + (S2x - D2x) * (S2y)) - (D2y - S2y) * (((D1y - S1y) * (S1x) + (S1x - D1x) * (S1y)))) / ((D1y - S1y) * (S2x - D2x) - (D2y - S2y) * (S1x - D1x))
+        return [x,y]
 
 def parallel(seg1,seg2):
     """
@@ -98,8 +73,8 @@ def isOnSeg(startP, endP, pt):
     :param pt: Point
     :return: Boolean value
     """
-    if startP[0]==endP[0]:
-        if pt[0]==startP[0]:
+    if isclose(startP[0],endP[0]):
+        if isclose(pt[0],startP[0]):
             if startP[1]>=pt[1] and pt[1]>=endP[1]:
                 return True
             elif endP[1]>=pt[1] and pt[1]>=startP[1]:
@@ -108,8 +83,8 @@ def isOnSeg(startP, endP, pt):
                 return False
         else:
             return False
-    elif startP[1]==endP[1]:
-        if pt[1]==startP[1]:
+    elif isclose(startP[1],endP[1]):
+        if isclose(pt[1],startP[1]):
             if startP[0]>=pt[0] and pt[0]>=endP[0]:
                 return True
             elif endP[0]>=pt[0] and pt[0]>=startP[0]:
@@ -163,6 +138,7 @@ def pointInsidePolygon(pt, edges, vertices):
     inters=[]
     for ei in range(len(edges)):
         inter = Intersection(edges[ei][0][0],edges[ei][0][1],edges[ei][1][0],edges[ei][1][1],seg[0][0],seg[0][1],seg[1][0],seg[1][1])
+
         if isOnSeg(edges[ei][0],edges[ei][1],pt):
             return True
         if inter!=[None,None]:
@@ -226,10 +202,10 @@ def computeVisibility(vertices, vertex):
             if e[0]!=V and e[1]!=V:
                 if not parallel(e,seg):
                     inter = Intersection(seg[0][0],seg[0][1],seg[1][0], seg[1][1], e[0][0], e[0][1], e[1][0], e[1][1])
+
                     if isOnSeg(e[0],e[1],inter):
                         if inter not in inters:
                             inters.append(inter)
-
         flag_closest = True
         validInters = []
         all_inters_vertices = True
@@ -241,6 +217,7 @@ def computeVisibility(vertices, vertex):
                     break
                 else:
                     validInters.append(inter)
+
         flag_visible_vertex = False
         if flag_closest == False and all_inters_vertices == True:
             if V not in validInters:
@@ -258,54 +235,67 @@ def computeVisibility(vertices, vertex):
                 visibility.append(V)
 
             else:
+
                 seg1=[vertex, visibility[len(visibility)-1]]
                 seg2=[vertex, V]
                 interPrev = None
                 interNext = None
                 invisilbe_edges.append([V,prevV])
+                closestPrev = None
+                closestNext = None
+                i = vertices.index(visibility[len(visibility) - 1])
+                if not (orient(vertex, vertices[i], vertices[(i + 1) % len(vertices)]) <= 0 and orient(
+                        vertex, vertices[i], vertices[(i - 1) % len(vertices)]) <= 0) and not (
+                                orient(vertex, vertices[i], vertices[(i + 1) % len(vertices)]) >= 0 and orient(
+                            vertex, vertices[i], vertices[(i - 1) % len(vertices)]) >= 0):
+                    interPrev = visibility[len(visibility) - 1]
+
+                i = vertices.index(V)
+                if not (orient(vertex, vertices[i],
+                               vertices[(i + 1) % len(vertices)]) <= 0 and orient(
+                    vertex, vertices[i], vertices[(i - 1) % len(vertices)]) <= 0) and not (
+                                orient(vertex, vertices[i],
+                                       vertices[(i + 1) % len(vertices)]) >= 0 and orient(
+                            vertex, vertices[i], vertices[(i - 1) % len(vertices)]) >= 0):
+                    interNext = V
                 for e in invisilbe_edges:
-                    if not parallel(e, seg1):
-                        inter = Intersection(seg1[0][0], seg1[0][1], seg1[1][0], seg1[1][1], e[0][0], e[0][1], e[1][0],
-                                             e[1][1])
-                        if isOnSeg(e[0], e[1], inter):
-                            if inter!= visibility[len(visibility)-1]:
-                                if distance(vertex, inter) > distance(visibility[len(visibility) - 1], inter):
-                                    if interPrev==None:
-                                        interPrev = inter
-                                    elif distance(vertex,inter)<distance(vertex,interPrev):
-                                        interPrev = inter
-                            else:
-                                i = vertices.index(visibility[len(visibility)-1])
-                                if not (orient(vertex, vertices[i], vertices[(i + 1) % len(vertices)]) <= 0 and orient(
-                                        vertex,vertices[i], vertices[(i - 1) % len(vertices)]) <= 0) and not (
-                                            orient(vertex, vertices[i], vertices[(i + 1) % len(vertices)]) >= 0 and orient(
-                                        vertex, vertices[i], vertices[(i - 1) % len(vertices)]) >= 0):
-                                    if distance(vertex, inter)>distance(visibility[len(visibility)-1],inter):
-                                        interPrev=inter
+                    if interPrev == None:
+                        if not parallel(e, seg1):
+                            inter = Intersection(seg1[0][0], seg1[0][1], seg1[1][0], seg1[1][1], e[0][0], e[0][1], e[1][0],
+                                                 e[1][1])
+
+                            if isOnSeg(e[0], e[1], inter):
+                                if inter!= visibility[len(visibility)-1]:
+                                    if distance(vertex, inter) > distance(visibility[len(visibility) - 1], inter):
+                                        if closestPrev==None:
+                                            closestPrev = inter
+                                        elif distance(closestPrev,vertex)>distance(inter,vertex):
+                                            closestPrev = inter
 
 
+                    if interNext == None:
+                        if not parallel(e, seg2):
+                            inter = Intersection(seg2[0][0], seg2[0][1], seg2[1][0], seg2[1][1], e[0][0], e[0][1], e[1][0],
+                                                 e[1][1])
+                            if isOnSeg(e[0], e[1], inter):
 
-                    if not parallel(e, seg2):
-                        inter = Intersection(seg2[0][0], seg2[0][1], seg2[1][0], seg2[1][1], e[0][0], e[0][1], e[1][0],
-                                             e[1][1])
-                        if isOnSeg(e[0], e[1], inter):
-                            if inter!=V:
-                                i = vertices.index(V)
-                                if (orient(vertex, vertices[i],
-                                               vertices[(i + 1) % len(vertices)]) <= 0 and orient(
-                                        vertex, vertices[i], vertices[(i - 1) % len(vertices)]) <= 0) or (
-                                                orient(vertex, vertices[i],
-                                                       vertices[(i + 1) % len(vertices)]) >= 0 and orient(
-                                            vertex, vertices[i], vertices[(i - 1) % len(vertices)]) >= 0):
+                                if inter!= V:
                                     if distance(vertex, inter) > distance(V, inter):
-                                        if interNext==None:
-                                            interNext = inter
-                                        elif distance(vertex,inter)<distance(vertex,interNext):
-                                            interNext = inter
-                if interPrev != None:
-                    visibility.append(interPrev)
-                if interNext != None:
-                    visibility.append(interNext)
+                                        if closestNext==None:
+                                            closestNext = inter
+                                        elif distance(closestNext,vertex)[0]>distance(inter,vertex)[0]:
+                                            closestNext = inter
+                if interPrev == None:
+                    if closestPrev!= None:
+                        if pointInsidePolygon(midpoint(closestPrev,visibility[len(visibility)-1]),Es, vertices):
+                            if closestPrev != visibility[len(visibility)-1]:
+                                visibility.append(closestPrev)
+
+                if interNext == None:
+                    if closestNext != None:
+                        if pointInsidePolygon(midpoint(closestNext, V), Es, vertices):
+                            if closestNext != V:
+                                visibility.append(closestNext)
 
                 visibility.append(V)
                 flag_invisible = False
@@ -316,3 +306,4 @@ def computeVisibility(vertices, vertex):
             invisilbe_edges.append([V,prevV])
             prevV = V
     return visibility
+

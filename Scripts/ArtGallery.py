@@ -22,35 +22,23 @@ import pygame, sys
 from pygame import gfxdraw
 import mcoloring
 import PolygonVisibility
-from sympy.solvers import solve
-from sympy import Symbol
 from pygame.locals import *
 import polytri
 import easygui
 
-def findST(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y):
+def _intersection(P1, P2, P3):
     """
-    Find params 'S' & 'T' for 2 line segments
-    :param S1x: x coordinate of segment 1's start point
-    :param S1y: y coordinate of segment 1's start point
-    :param D1x: x coordinate of segment 1's end point
-    :param D1y: y coordinate of segment 1's end point
-    :param S2x: x coordinate of segment 2's start point
-    :param S2y: y coordinate of segment 2's start point
-    :param D2x: x coordinate of segment 2's end point
-    :param D2y: y coordinate of segment 2's end point
-    :return: params S & T
+    Intersection support function
+    :param P1: point 1
+    :param P2: point 2
+    :param P3: point 3
+    :return:
     """
-    s=Symbol('s')
-    t = Symbol('t')
-    ans=solve([(((1 - s) * S1x) + (s * D1x) - ((1 - t) * S2x) - (t * D2x)), (((1 - s) * S1y) + (s * D1y) - ((1 - t) * S2y) - (t * D2y))])
-    if ans == []:
-        return -1, -1
-    return ans[s], ans[t]
+    return (P3[1] - P1[1]) * (P2[0] - P1[0]) > (P2[1] - P1[1]) * (P3[0] - P1[0])
 
 def findIntersection(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y):
     """
-    Find intersection point of 2 line segments
+    Find if 2 line segments intersect
     :param S1x: x coordinate of segment 1's start point
     :param S1y: y coordinate of segment 1's start point
     :param D1x: x coordinate of segment 1's end point
@@ -61,12 +49,7 @@ def findIntersection(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y):
     :param D2y: y coordinate of segment 2's end point
     :return: Intersection point [x,y]
     """
-    s,t= findST(S1x, S1y, D1x, D1y, S2x, S2y, D2x, D2y)
-    if not(0<=s<=1 and 0<=t<=1):
-        return False
-    else:
-        return True
-
+    return _intersection([S1x,S1y],[S2x,S2y],[D2x,D2y]) != _intersection([D1x,D1y],[S2x,S2y],[D2x,D2y]) and _intersection([S1x,S1y],[D1x,D1y],[S2x,S2y]) != _intersection([S1x,S1y],[D1x,D1y],[D2x,D2y])
 
 def displayStatus(statusMsg):
     """
@@ -122,7 +105,6 @@ def drawPolygon():
         pygame.draw.aaline(screen, BLUE, points[i], points[i + 1])
         textsurface = myfont2.render(str(i), False, (0, 0, 0))
         screen.blit(textsurface, (points[i][0], points[i][1]))
-    print(points)
     textsurface = myfont2.render(str(len(points) - 1), False, (0, 0, 0))
     screen.blit(textsurface, (points[len(points) - 1][0], points[len(points) - 1][1]))
     pygame.draw.aaline(screen, BLUE, points[len(points) - 1], points[0])
@@ -165,6 +147,7 @@ def process():
     Process the Algorithm (Edge clipping & 3 - coloring)
     :return:
     """
+    # print(points)
     gen = polytri.triangulate_poly(pts)
     adj_matrix = [[0 for __ in range(count)] for _ in range(count)]
 
