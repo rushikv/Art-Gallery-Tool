@@ -63,6 +63,15 @@ For every other vertex V:
     	add V to invisible_edges
 ```
     	
+# Issues
+* Polygon Visibility is inaccurate in rare cases because of floating point comparisons (issues with precission).
+* Triangulation may fail sometimes if the points are placed too close to each other (bug in the ear clipping algorithm).
+* Does not always give minimum no. of guards (flaw in the approach, finding accurate answer always is NP-hard problem).
+
+# Future Work
+* Efficient Vertex guard visibility algorithm
+* Editing polygon during run time
+* Ability to pause the visualization of the algorithm
 
 # Credits
 * Ear Clipping Triangulation ([Polytri](https://github.com/bjorkegeek/polytri)). Thanks to David Björkevik ([bjorkegeek](https://github.com/bjorkegeek))
