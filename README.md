@@ -70,8 +70,9 @@ For every other vertex V:
 
 # Future Work
 * Efficient Vertex guard visibility algorithm
-* Editing polygon during run time
+* Editing polygon during run time (by drag and drop of edges and vertices)
 * Ability to pause the visualization of the algorithm
+* More appealing visual effects
 
 # Credits
 * Ear Clipping Triangulation ([Polytri](https://github.com/bjorkegeek/polytri)). Thanks to David Björkevik ([bjorkegeek](https://github.com/bjorkegeek))
